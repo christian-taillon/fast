@@ -3,6 +3,7 @@ import shutil
 import logging
 import argparse
 from datetime import datetime
+from collections import defaultdict
 
 def setup_logging(log_file=None):
     """Setup logging configuration."""
@@ -58,6 +59,37 @@ def get_year_of_last_modified(file_path):
     log(f"File {file_path} last modified in year: {year}")
     return year
 
+def simulate_file_structure(base_dir, categories, ignore_paths):
+    """Simulate the file structure changes."""
+    simulated_structure = defaultdict(lambda: defaultdict(list))
+
+    for root, _, files in os.walk(base_dir):
+        for file in files:
+            file_ext = file.split('.')[-1].lower()
+            file_path = os.path.join(root, file)
+
+            if should_ignore(file_path, ignore_paths):
+                continue
+
+            year = get_year_of_last_modified(file_path)
+
+            for folder, extensions in categories.items():
+                if file_ext in extensions:
+                    simulated_structure[year][folder].append(file)
+                    break
+
+    return simulated_structure
+
+def print_simulated_structure(base_dir, simulated_structure):
+    """Print the simulated directory structure."""
+    print(base_dir)
+    for year, folders in sorted(simulated_structure.items(), reverse=True):
+        print(f"|-- {year}")
+        for folder, files in folders.items():
+            print(f"|   |-- {folder}")
+            for file in sorted(files):
+                print(f"|   |   |-- {file}")
+
 def organize_files(base_dir, categories, ignore_paths, test_mode=False):
     """Organize files into specified categories by year."""
     for root, _, files in os.walk(base_dir):
@@ -88,6 +120,7 @@ def main():
     parser = argparse.ArgumentParser(description="Organize files by year and category.")
     parser.add_argument("--path", "-p", required=True, help="Full path to the directory to organize")
     parser.add_argument("--test", "-t", action="store_true", help="Run in test mode without moving files")
+    parser.add_argument("--simulate", "-s", action="store_true", help="Simulate and visualize the changes")
     parser.add_argument("--log_file", "-l", help="Log to a file with the given base name (timestamp will be added)")
     args = parser.parse_args()
 
@@ -99,12 +132,19 @@ def main():
 
     log(f"Starting file organization process for directory: {BASE_DIR}")
     test_mode = args.test
+    simulate_mode = args.simulate
 
     if test_mode:
         log("Running in test mode")
 
     categories, ignore_paths = parse_config(CONFIG_FILE)
-    organize_files(BASE_DIR, categories, ignore_paths, test_mode)
+
+    if simulate_mode:
+        log("Simulating file organization")
+        simulated_structure = simulate_file_structure(BASE_DIR, categories, ignore_paths)
+        print_simulated_structure(BASE_DIR, simulated_structure)
+    else:
+        organize_files(BASE_DIR, categories, ignore_paths, test_mode)
 
     log("File organization process completed")
 
