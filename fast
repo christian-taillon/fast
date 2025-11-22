@@ -1,0 +1,21 @@
+#!/bin/bash
+# FAST - Quick launcher script
+
+# Check if we're in the right directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+# Check if Python is available
+if ! command -v python3 &> /dev/null; then
+    echo "Error: Python 3 is not installed"
+    exit 1
+fi
+
+# Check if dependencies are installed
+if ! python3 -c "import rich" 2>/dev/null; then
+    echo "Dependencies not found. Installing..."
+    pip3 install -r requirements.txt
+fi
+
+# Launch the TUI
+python3 fast_tui.py "$@"
