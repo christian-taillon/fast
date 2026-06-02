@@ -1,0 +1,19 @@
+[project]
+name = "fast"
+version = "0.1.0"
+description = "File Arrangement and Sorting Tool"
+readme = "README.MD"
+requires-python = ">=3.7"
+dependencies = [
+    "rich>=13.7.0",
+    "InquirerPy>=0.3.4",
+    "prompt_toolkit>=3.0.43",
+]
+
+[project.scripts]
+fast = "fast:main"
+fast-tui = "fast_tui:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

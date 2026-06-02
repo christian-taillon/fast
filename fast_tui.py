@@ -25,6 +25,7 @@ from rich.text import Text
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 from InquirerPy.separator import Separator
+from InquirerPy.utils import InquirerPyStyle
 
 # Import core functions from original fast.py
 from fast import (
@@ -35,6 +36,11 @@ from fast import (
 )
 
 console = Console()
+
+MENU_STYLE = InquirerPyStyle({
+    'pointer': 'cyan bold',
+    'highlighted': 'cyan bold',
+})
 
 
 class FASTWizard:
@@ -90,10 +96,7 @@ class FASTWizard:
                 choices=choices,
                 default="organize",
                 pointer="→",
-                style={
-                    'pointer': 'cyan bold',
-                    'highlighted': 'cyan bold',
-                }
+                style=MENU_STYLE,
             ).execute()
 
             if action == "organize":
@@ -810,6 +813,11 @@ Format: CategoryName: ext1, ext2, ext3
 
 def main():
     """Main entry point"""
+    if not sys.stdin.isatty():
+        console.print("[red]FAST TUI requires an interactive terminal.[/red]")
+        console.print("Run it directly in a terminal with: [bold]uv run fast_tui.py[/bold]")
+        sys.exit(1)
+
     try:
         wizard = FASTWizard()
         wizard.main_menu()

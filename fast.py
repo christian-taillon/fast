@@ -6,6 +6,23 @@ from datetime import datetime
 from collections import defaultdict
 import fnmatch
 
+NO_EXTENSION = "[no extension]"
+NO_EXTENSION_ALIASES = {"", NO_EXTENSION, "(no extension)", "no_extension", "no-extension", "none"}
+
+
+def normalize_extension(extension):
+    """Normalize configured extension tokens for matching."""
+    extension = extension.strip().lower().lstrip('.')
+    if extension in NO_EXTENSION_ALIASES:
+        return NO_EXTENSION
+    return extension
+
+
+def get_file_extension_key(file_path):
+    """Return the matching key for a file's extension, including no-extension files."""
+    extension = os.path.splitext(file_path)[1].lower().lstrip('.')
+    return extension if extension else NO_EXTENSION
+
 def setup_logging(log_file=None):
     """Setup logging configuration."""
     handlers = [logging.StreamHandler()]
@@ -36,9 +53,9 @@ def parse_config(config_file, base_dir):
             line = line.strip()
             if line and not line.startswith("#"):
                 if ':' in line:
-                    folder, extensions = line.split(':')
+                    folder, extensions = line.split(':', 1)
                     folder = folder.strip()
-                    extensions = [ext.strip() for ext in extensions.split(',')]
+                    extensions = [normalize_extension(ext) for ext in extensions.split(',')]
                     if folder.lower() == "ignore":
                         ignore_patterns.extend(extensions)
                     elif folder.lower() == "ignore_path":
@@ -119,7 +136,7 @@ def simulate_file_structure(base_dir, categories, ignore_patterns, ignore_paths,
         if should_ignore(file_path, ignore_patterns) or is_in_ignore_path(file_path, ignore_paths):
             continue
 
-        file_ext = os.path.splitext(file_path)[1].lower().lstrip('.')
+        file_ext = get_file_extension_key(file_path)
         year = get_year_of_last_modified(file_path)
 
         for folder, extensions in categories.items():
@@ -147,7 +164,7 @@ def simulate_file_structure(base_dir, categories, ignore_patterns, ignore_paths,
         if os.path.isdir(path):
             simulated_structure[year]["archive_dir"].append(path)
         else:
-            file_ext = os.path.splitext(path)[1].lower().lstrip('.')
+            file_ext = get_file_extension_key(path)
             for folder, extensions in categories.items():
                 if file_ext in extensions:
                     dest_dir = os.path.join(base_dir, str(year), folder)
@@ -283,7 +300,7 @@ def organize_files(base_dir, categories, ignore_patterns, ignore_paths, archive_
         if should_ignore(file_path, ignore_patterns) or is_in_ignore_path(file_path, ignore_paths):
             continue
 
-        file_ext = os.path.splitext(file_path)[1].lower().lstrip('.')
+        file_ext = get_file_extension_key(file_path)
         year = get_year_of_last_modified(file_path)
 
         for folder, extensions in categories.items():
@@ -325,7 +342,7 @@ def organize_files(base_dir, categories, ignore_patterns, ignore_paths, archive_
             if not test_mode:
                 shutil.move(path, dest_dir)
         else:
-            file_ext = os.path.splitext(path)[1].lower().lstrip('.')
+            file_ext = get_file_extension_key(path)
             for folder, extensions in categories.items():
                 if file_ext in extensions:
                     dest_dir = os.path.join(base_dir, str(year), folder)
